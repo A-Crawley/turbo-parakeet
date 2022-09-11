@@ -3,7 +3,6 @@ import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import "./App.css";
 import { Job } from "./classes/Job";
-import JobCard from "./components/JobCard";
 
 let loopTime = 150;
 
@@ -223,10 +222,9 @@ function App() {
         {familyBakery
           .filter((j) => j.unlocked())
           .map((job) => (
-            <JobCard
+            <job.component
               key={job.id}
-              setActiveJob={() => setActiveJob(job)}
-              job={job}
+              setAsActive={(job: Job) => setActiveJob(job)}
             />
           ))}
       </div>

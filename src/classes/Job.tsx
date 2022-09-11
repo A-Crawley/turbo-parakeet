@@ -1,3 +1,9 @@
+import { LinearProgress, Paper, Typography } from "@mui/material";
+
+interface Props {
+  setAsActive: Function;
+}
+
 export class Job {
   public id: number;
   private name: string;
@@ -66,4 +72,42 @@ export class Job {
   public getName = () => this.name;
   public getIncome = () => this.income;
   public unlocked = () => this.unlockAction() === true;
+
+  public component = ({ setAsActive }: Props) => {
+    return (
+      <>
+        <Paper
+          sx={{ width: "200px", background: "#808080", p: 1, m: 2 }}
+          onClick={() => setAsActive(this)}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              marginBottom: "8px",
+            }}
+          >
+            <Typography>{this.getName()}</Typography>
+            <Typography>Lvl: {this.getLevel()}</Typography>
+          </div>
+          <LinearProgress
+            variant={"determinate"}
+            value={this.getProgressPercentage()}
+            sx={{ mb: 1 }}
+          />
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+            }}
+          >
+            <Typography>{this.getProgressPercentage().toFixed(0)}%</Typography>
+            <Typography>{this.getIncome().toPrecision(1)}c</Typography>
+          </div>
+        </Paper>
+      </>
+    );
+  };
 }
