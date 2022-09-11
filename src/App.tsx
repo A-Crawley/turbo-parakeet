@@ -3,6 +3,7 @@ import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import "./App.css";
 import { Job } from "./classes/Job";
+import { Skill } from "./classes/Skill";
 
 let loopTime = 150;
 
@@ -120,7 +121,11 @@ const bakeryOwnerJob = new Job(
   2
 );
 
-const familyBakery: Job[] = [
+const consentration = new Skill(1, "Consentration", 2, () => true);
+
+const skillz = [consentration];
+
+const familyBakery = [
   helperJob,
   assistantJob,
   apprenticeJob,
@@ -142,6 +147,7 @@ function App() {
   const [age, setAge] = useState(startingAge);
 
   const [activeJob, setActiveJob] = useState<Job>();
+  const [activeSkill, setActiveSkill] = useState<Skill>();
   const [cash, setCash] = useState(0);
 
   const [paused, setPaused] = useState(false);
@@ -161,9 +167,13 @@ function App() {
     }
     // DO THINGS
     if (activeJob !== null && activeJob !== undefined) {
-      activeJob.increaseProgress();
+      activeJob.increaseProgress(skillz);
       setCash((cash) => cash + activeJob.getIncome());
       setActiveJob(activeJob);
+    }
+    if (activeSkill !== null && activeSkill !== undefined) {
+      activeSkill.increaseProgress(skillz);
+      setActiveSkill(activeSkill);
     }
   };
 
@@ -218,7 +228,15 @@ function App() {
           </Typography>
         </div>
       </div>
-      <div>
+      <div style={{ display: "flex", flexDirection: "row" }}>
+        {skillz.map((skill) => (
+          <skill.component
+            key={skill.id}
+            setAsActive={(skill: Skill) => setActiveSkill(skill)}
+          />
+        ))}
+      </div>
+      <div style={{ display: "flex", flexDirection: "row" }}>
         {familyBakery
           .filter((j) => j.unlocked())
           .map((job) => (
