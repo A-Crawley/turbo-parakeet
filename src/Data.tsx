@@ -72,6 +72,20 @@ export const familyBakery = [
 
 ////////////////////////////////////////////////////////////////////
 
-const consentration = new Skill(1, "Consentration", 2, () => true);
+const consentration = new Skill(
+  1,
+  "Consentration",
+  2,
+  () => true,
+  () => {
+    familyBakery.forEach((job: Job) => {
+      job.increaseMultiplier(0.5);
+    });
+
+    selfImprovmentSkills.forEach((skill: Skill) => {
+      skill.increaseMultiplier(0.5);
+    });
+  }
+);
 
 export const selfImprovmentSkills = [consentration];

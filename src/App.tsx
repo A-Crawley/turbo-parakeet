@@ -40,12 +40,12 @@ function App() {
     }
     // DO THINGS
     if (activeJob !== null && activeJob !== undefined) {
-      activeJob.increaseProgress(selfImprovmentSkills);
+      activeJob.increaseProgress();
       setCash((cash) => cash + activeJob.getIncome());
       setActiveJob(activeJob);
     }
     if (activeSkill !== null && activeSkill !== undefined) {
-      activeSkill.increaseProgress(selfImprovmentSkills);
+      activeSkill.increaseProgress();
       setActiveSkill(activeSkill);
     }
   };

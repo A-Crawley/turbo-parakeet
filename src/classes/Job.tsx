@@ -1,4 +1,4 @@
-import { LinearProgress, Paper, Typography } from "@mui/material";
+import { LinearProgress, Paper, Tooltip, Typography } from "@mui/material";
 import { Skill } from "./Skill";
 
 interface Props {
@@ -51,11 +51,12 @@ export class Job {
     this.unlockAction = unlockAction;
   }
 
-  public increaseProgress = (skills: Skill[]) => {
-    const increase =
-      (this.progressBaseValue +
-        (skills.filter((s) => s.id === 1)[0].getLevel() - 1) / 10) *
-      this.progressMultiplyer;
+  public increaseMultiplier = (value: number) => {
+    this.progressMultiplyer += value;
+  };
+
+  public increaseProgress = () => {
+    const increase = this.progressBaseValue * this.progressMultiplyer;
 
     if (this.progress + increase > this.progressNeededToLevel) {
       this.levelUp(
@@ -80,37 +81,41 @@ export class Job {
   public component = ({ setAsActive }: Props) => {
     return (
       <>
-        <Paper
-          sx={{ width: "200px", background: "#808080", p: 1, m: 2 }}
-          onClick={() => setAsActive(this)}
-        >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginBottom: "8px",
-            }}
+        <Tooltip title={`x${this.progressMultiplyer.toPrecision(3)}`}>
+          <Paper
+            sx={{ width: "200px", background: "#808080", p: 1, m: 2 }}
+            onClick={() => setAsActive(this)}
           >
-            <Typography>{this.getName()}</Typography>
-            <Typography>Lvl: {this.getLevel()}</Typography>
-          </div>
-          <LinearProgress
-            variant={"determinate"}
-            value={this.getProgressPercentage()}
-            sx={{ mb: 1 }}
-          />
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "space-between",
-            }}
-          >
-            <Typography>{this.getProgressPercentage().toFixed(0)}%</Typography>
-            <Typography>{this.getIncome().toPrecision(1)}c</Typography>
-          </div>
-        </Paper>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: "8px",
+              }}
+            >
+              <Typography>{this.getName()}</Typography>
+              <Typography>Lvl: {this.getLevel()}</Typography>
+            </div>
+            <LinearProgress
+              variant={"determinate"}
+              value={this.getProgressPercentage()}
+              sx={{ mb: 1 }}
+            />
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              <Typography>
+                {this.getProgressPercentage().toFixed(0)}%
+              </Typography>
+              <Typography>{this.getIncome().toPrecision(1)}c</Typography>
+            </div>
+          </Paper>
+        </Tooltip>
       </>
     );
   };

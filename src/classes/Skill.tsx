@@ -14,6 +14,7 @@ export class Skill {
   private progressNeededToLevel: number;
   private progressNeededToLevelMultiplyer: number;
   private unlockAction: Function;
+  private levelUpAction: Function;
 
   private levelUp = (levelIncrease: number) => {
     this.level += levelIncrease;
@@ -21,6 +22,7 @@ export class Skill {
       this.level * this.progressNeededToLevelMultiplyer * 100;
     this.progress = 0;
     this.progressMultiplyer *= 1.15;
+    this.levelUpAction();
     console.log({ data: this });
   };
 
@@ -28,7 +30,8 @@ export class Skill {
     id: number,
     name: string,
     progressBaseValue: number,
-    unlockAction: Function
+    unlockAction: Function,
+    levelUpAction: Function
   ) {
     this.id = id;
     this.name = name;
@@ -39,9 +42,14 @@ export class Skill {
     this.level = 1;
     this.progressNeededToLevelMultiplyer = 1.5;
     this.unlockAction = unlockAction;
+    this.levelUpAction = levelUpAction;
   }
 
-  public increaseProgress = (skills: Skill[]) => {
+  public increaseMultiplier = (value: number) => {
+    this.progressMultiplyer += value;
+  };
+
+  public increaseProgress = () => {
     const increase = this.progressBaseValue * this.progressMultiplyer;
 
     if (this.progress + increase > this.progressNeededToLevel) {
@@ -66,7 +74,7 @@ export class Skill {
   public component = ({ setAsActive }: Props) => {
     return (
       <>
-        <Tooltip title="This is a tool tip">
+        <Tooltip title={`x${this.progressMultiplyer.toPrecision(3)}`}>
           <Paper
             sx={{ width: "200px", background: "#808080", p: 1, m: 2 }}
             onClick={() => setAsActive(this)}
