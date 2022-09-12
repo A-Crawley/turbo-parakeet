@@ -1,5 +1,4 @@
 import { LinearProgress, Paper, Tooltip, Typography } from "@mui/material";
-import { Skill } from "./Skill";
 
 interface Props {
   setAsActive: Function;
