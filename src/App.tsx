@@ -22,6 +22,7 @@ function App() {
   const [activeJob, setActiveJob] = useState<Job>();
   const [activeSkill, setActiveSkill] = useState<Skill>();
   const [cash, setCash] = useState(0);
+  const [outgoings, setOutgoings] = useState(0);
 
   const [paused, setPaused] = useState(false);
 
@@ -51,7 +52,7 @@ function App() {
     // DO THINGS
     if (activeJob !== null && activeJob !== undefined) {
       activeJob.increaseProgress();
-      setCash((cash) => cash + activeJob.getIncome());
+      setCash((cash) => cash + activeJob.getIncome() - outgoings);
       setActiveJob(activeJob);
     }
     if (activeSkill !== null && activeSkill !== undefined) {
