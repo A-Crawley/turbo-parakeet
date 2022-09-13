@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import { Job } from "./classes/Job";
 import { Skill } from "./classes/Skill";
-import { familyBakery, selfImprovmentSkills } from "./Data";
+import { familyBakery, purchaseableItems, selfImprovmentSkills } from "./Data";
 import { formatDate, getCurrenyDivisions, prettyPrintCurrency } from "./Utils";
 
 function App() {
@@ -24,6 +24,16 @@ function App() {
   const [cash, setCash] = useState(0);
 
   const [paused, setPaused] = useState(false);
+
+  const withdrawCash = (amount: number): boolean => {
+    if (amount > cash) return false;
+    setCash((c) => c - amount);
+    return true;
+  };
+
+  const depositCash = (amount: number) => {
+    setCash((c) => c + amount);
+  };
 
   const iterate = () => {
     if (paused) return;
@@ -116,6 +126,16 @@ function App() {
             <job.component
               key={job.id}
               setAsActive={(job: Job) => setActiveJob(job)}
+            />
+          ))}
+      </div>
+      <div style={{ display: "flex", flexDirection: "row" }}>
+        {purchaseableItems
+          .filter((j) => true)
+          .map((purchasable) => (
+            <purchasable.component
+              key={purchasable.id}
+              withdraw={withdrawCash}
             />
           ))}
       </div>

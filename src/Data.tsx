@@ -1,5 +1,6 @@
 import { Job } from "./classes/Job";
 import { Skill } from "./classes/Skill";
+import Item from "./classes/Item";
 
 const helperJob = new Job(1, "Helper", 1, 0.01, () => true, 2);
 const assistantJob = new Job(
@@ -89,3 +90,15 @@ const consentration = new Skill(
 );
 
 export const selfImprovmentSkills = [consentration];
+
+const bed = new Item(1, "Bed", 10, () => {
+  familyBakery.forEach((job: Job) => {
+    job.increaseMultiplier(0.5);
+  });
+
+  selfImprovmentSkills.forEach((skill: Skill) => {
+    skill.increaseMultiplier(0.5);
+  });
+});
+
+export const purchaseableItems = [bed];
