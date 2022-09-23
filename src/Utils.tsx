@@ -24,7 +24,7 @@ export const getCurrenyDivisions = (copper: number): Currency => {
   const silverConversionRate = 1000;
   const goldConversionRate = silverConversionRate * 1000;
 
-  copper = Math.round(copper);
+  copper = Math.floor(copper);
 
   let currency = { copper: 0, silver: 0, gold: 0 };
 

@@ -15,13 +15,12 @@ export class Skill {
   private progressNeededToLevelMultiplyer: number;
   private unlockAction: Function;
   private levelUpAction: Function;
+  private maxLevel: number;
 
   private levelUp = (levelIncrease: number) => {
     this.level += levelIncrease;
-    this.progressNeededToLevel =
-      this.level * this.progressNeededToLevelMultiplyer * 100;
+    this.progressNeededToLevel = this.levelScale(this.level);
     this.progress = 0;
-    this.progressMultiplyer *= 1.15;
     this.levelUpAction();
     console.log({ data: this });
   };
@@ -43,7 +42,24 @@ export class Skill {
     this.progressNeededToLevelMultiplyer = 1.5;
     this.unlockAction = unlockAction;
     this.levelUpAction = levelUpAction;
+    this.maxLevel = 0;
   }
+
+  // x = progress to level
+  // t = max level
+  // f(x) = ( x^2 ) + 100 - ( ( t / 10 ) * x )
+  private levelScale = (x: number): number => {
+    return Math.pow(x, 2) + 100 - (this.maxLevel / 10) * x;
+  };
+
+  public setRebirthMultiplier = () => {
+    if (this.maxLevel < this.level) this.maxLevel = this.level;
+    this.progress = 0;
+    this.progressNeededToLevel = 100;
+    this.progressMultiplyer = 1;
+    this.level = 1;
+    this.progressNeededToLevelMultiplyer = 1.5;
+  };
 
   public increaseMultiplier = (value: number) => {
     this.progressMultiplyer += value;
@@ -84,11 +100,29 @@ export class Skill {
                 display: "flex",
                 flexDirection: "row",
                 justifyContent: "space-between",
-                marginBottom: "8px",
+                marginBottom: "2px",
               }}
             >
               <Typography>{this.getName()}</Typography>
               <Typography>Lvl: {this.getLevel()}</Typography>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: "8px",
+              }}
+            >
+              <Typography
+                fontSize={"0.7em"}
+                sx={{
+                  ml: "auto",
+                  visibility: this.maxLevel <= 0 ? "hidden" : "visible",
+                }}
+              >
+                Max Lvl: {this.maxLevel}
+              </Typography>
             </div>
             <LinearProgress
               variant={"determinate"}

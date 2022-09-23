@@ -8,6 +8,7 @@ interface Props {
 export default class Item {
   public id: number;
   private purchaseFunction: Function;
+  private removeFunction: Function;
   private name: string;
   private isPurchased: boolean;
   private cost: number;
@@ -16,17 +17,27 @@ export default class Item {
     id: number,
     name: string,
     cost: number,
-    purchaseFunction: Function
+    purchaseFunction: Function,
+    removeFunction: Function
   ) {
     this.id = id;
     this.purchaseFunction = purchaseFunction;
     this.isPurchased = false;
     this.name = name;
     this.cost = cost;
+    this.removeFunction = removeFunction;
   }
 
+  public rebirth = () => {
+    this.isPurchased = false;
+  };
+
   public purchase = (withdraw: Function) => {
-    if (this.isPurchased) return;
+    if (this.isPurchased) {
+      this.removeFunction();
+      this.isPurchased = false;
+      return;
+    }
     if (!withdraw(this.cost)) return;
     this.purchaseFunction();
     this.isPurchased = true;

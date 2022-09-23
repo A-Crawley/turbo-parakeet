@@ -2,13 +2,27 @@ import { Job } from "./classes/Job";
 import { Skill } from "./classes/Skill";
 import Item from "./classes/Item";
 
-const helperJob = new Job(1, "Helper", 1, 0.01, () => true, 2);
+export const rebirthHelper = () => {
+  familyBakery.forEach((job: Job) => {
+    job.setRebirthMultiplier();
+  });
+
+  selfImprovmentSkills.forEach((skill: Skill) => {
+    skill.setRebirthMultiplier();
+  });
+
+  purchaseableItems.forEach((item: Item) => {
+    item.rebirth();
+  });
+};
+
+const helperJob = new Job(1, "Helper", 1, 0.01, () => true, 1.01);
 const assistantJob = new Job(
   2,
   "Assistant",
   1 / 2,
   0.05,
-  () => helperJob.getLevel() >= 2,
+  () => helperJob.getLevel() >= 10,
   2
 );
 const apprenticeJob = new Job(
@@ -76,8 +90,25 @@ export const familyBakery = [
 const consentration = new Skill(
   1,
   "Consentration",
-  2,
+  1,
   () => true,
+  () => {
+    familyBakery.forEach((job: Job) => {
+      job.increaseMultiplier(0.01);
+    });
+
+    selfImprovmentSkills.forEach((skill: Skill) => {
+      skill.increaseMultiplier(0.01);
+    });
+  }
+);
+
+export const selfImprovmentSkills = [consentration];
+
+const bed = new Item(
+  1,
+  "Bed",
+  2,
   () => {
     familyBakery.forEach((job: Job) => {
       job.increaseMultiplier(0.5);
@@ -86,19 +117,16 @@ const consentration = new Skill(
     selfImprovmentSkills.forEach((skill: Skill) => {
       skill.increaseMultiplier(0.5);
     });
+  },
+  () => {
+    familyBakery.forEach((job: Job) => {
+      job.increaseMultiplier(-0.5);
+    });
+
+    selfImprovmentSkills.forEach((skill: Skill) => {
+      skill.increaseMultiplier(-0.5);
+    });
   }
 );
-
-export const selfImprovmentSkills = [consentration];
-
-const bed = new Item(1, "Bed", 10, () => {
-  familyBakery.forEach((job: Job) => {
-    job.increaseMultiplier(0.5);
-  });
-
-  selfImprovmentSkills.forEach((skill: Skill) => {
-    skill.increaseMultiplier(0.5);
-  });
-});
 
 export const purchaseableItems = [bed];
