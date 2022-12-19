@@ -1,3 +1,14 @@
 :root {
   font-family: "Poppins", sans-serif;
 }
+
+#chat-log * {
+    overflow-anchor: none;
+}
+
+
+#anchor {
+    overflow-anchor: auto;
+    height: 1px;
+    width: 1px;
+}

@@ -87,7 +87,7 @@ export default function Chat() {
           }}
         >
           <Paper
-            className="chat-log"
+            id="chat-log"
             style={{
               width: "100%",
               height: "100%",
@@ -108,6 +108,7 @@ export default function Chat() {
                 </div>
               );
             })}
+              <div id="anchor"></div>
           </Paper>
           <div
             className="chat-input"

@@ -1,8 +1,9 @@
 import {
-  createClient,
-  RealtimeChannel,
-  RealtimePostgresChangesPayload,
-  User,
+    AuthError,
+    createClient,
+    RealtimeChannel,
+    RealtimePostgresChangesPayload,
+    User,
 } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL as string;
@@ -12,6 +13,11 @@ const GUESTID = "g_090";
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 let supabaseUser: User | null = null;
 export const getUser = () => supabaseUser;
+export const getUserProfileAsync = async () : Promise<any | null> => {
+    const response = await supabase.from("profiles").select('*').eq('user_id', supabaseUser?.id);
+    if (response?.data === null || response.data.length === 0) return null;
+    return response?.data[0];
+}
 
 supabase.auth.getUser().then((response) => {
   if (response.data.user === null) return;
@@ -19,6 +25,27 @@ supabase.auth.getUser().then((response) => {
 });
 
 let channel: RealtimeChannel;
+
+export const login = async (email: string, password: string) : Promise<AuthError | null> => {
+    const response = await supabase.auth.signInWithPassword({ email: email, password: password });
+    if (response.error !== undefined && response.error !== null) return response.error;
+    supabaseUser = response.data.user;
+    return null;
+}
+
+export const register = async (email: string, password: string, username: string) : Promise<AuthError | null> => {
+    const response = await supabase.auth.signUp({email: email, password: password});
+    if (response.error !== undefined && response.error !== null) return response.error;
+    supabaseUser = response.data.user;
+
+    await supabase.from("profiles").insert({
+        user_name: username,
+        is_guest: false,
+        user_id: supabaseUser?.id,
+    });
+
+    return null;
+}
 
 export const guestLogin = async () => {
   let guestId = localStorage.getItem(GUESTID);
