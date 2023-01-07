@@ -160,6 +160,7 @@ export default function Login(props: props | null) {
                             style={{ marginTop: "8px" }}
                             variant={"contained"}
                             onClick={handleLogin}
+                            disabled={true}
                             >
                             LOGIN
                         </Button>
@@ -183,7 +184,7 @@ export default function Login(props: props | null) {
                         style={{ marginBottom: "8px" }}
                         variant={"contained"}
                         onClick={handleRegisterClick}
-                        disabled={showUsername}
+                        disabled={true}
                         >
                         REGISTER
                     </Button>

@@ -1,30 +1,17 @@
-import {
-  Button,
-  ButtonGroup,
-  createTheme,
-  CssBaseline,
-  Dialog,
-  IconButton,
-  Paper,
-} from "@mui/material";
+import {Button, ButtonGroup, createTheme, CssBaseline, Dialog, Paper,} from "@mui/material";
 import Typography from "@mui/material/Typography";
-import { ThemeProvider } from "@mui/system";
-import { useEffect, useState } from "react";
+import {ThemeProvider} from "@mui/system";
+import {useEffect, useState} from "react";
 import "./App.css";
-import { Job } from "./classes/Job";
-import { Skill } from "./classes/Skill";
-import {
-  familyBakery,
-  purchaseableItems,
-  rebirthHelper,
-  selfImprovmentSkills,
-} from "./Data";
-import { formatDate, getCurrenyDivisions, prettyPrintCurrency } from "./Utils";
+import {Job} from "./classes/Job";
+import {Skill} from "./classes/Skill";
+import {familyBakery, purchaseableItems, rebirthHelper, selfImprovmentSkills,} from "./Data";
+import {formatDate, getCurrenyDivisions, prettyPrintCurrency} from "./Utils";
 import Icon from "@mui/material/Icon";
 import Chat from "./components/chat";
 import Login from "./components/login";
-import { getUser, getUserProfileAsync, supabase } from "./supabaseClient";
-import { User } from "@supabase/supabase-js";
+import {getUserProfileAsync, supabase} from "./supabaseClient";
+import {User} from "@supabase/supabase-js";
 
 const theme = createTheme({
   palette: {
@@ -162,10 +149,6 @@ function App() {
     };
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            iterate();
-            }, loopTime);
-
         supabase.auth.getUser().then((userResponse) => {
             if (userResponse.data.user !== null) {
                 setLoggedIn(true);
@@ -173,11 +156,17 @@ function App() {
                 getUserProfileAsync().then(data => setUserProfile(data));
             }
         });
-
-        return () => clearInterval(interval);
         }, []);
 
     useEffect(() => {}, [loggedIn]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            iterate();
+            }, loopTime);
+
+        return () => clearInterval(interval);
+    })
 
     return (
             <>
@@ -213,7 +202,7 @@ function App() {
                                         </Button>
                                     </div>
                                 </Dialog>
-                                <Chat />
+                                {/*<Chat />*/}
                                 <div style={{ display: "flex" }}>
                                     <div style={{ width: "300px" }}>
                                         <Paper
