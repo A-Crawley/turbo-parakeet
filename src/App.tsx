@@ -180,7 +180,6 @@ function App() {
 
     const saveInterval = setInterval(() => {
       save();
-      console.log("hit");
     }, 30 * 1000);
 
     getDay().then((obj) => {
