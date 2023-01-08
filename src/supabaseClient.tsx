@@ -1,9 +1,9 @@
 import {
-    AuthError,
-    createClient,
-    RealtimeChannel,
-    RealtimePostgresChangesPayload,
-    User,
+  AuthError,
+  createClient,
+  RealtimeChannel,
+  RealtimePostgresChangesPayload,
+  User,
 } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL as string;
@@ -13,11 +13,14 @@ const GUESTID = "g_090";
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 let supabaseUser: User | null = null;
 export const getUser = () => supabaseUser;
-export const getUserProfileAsync = async () : Promise<any | null> => {
-    const response = await supabase.from("profiles").select('*').eq('user_id', supabaseUser?.id);
-    if (response?.data === null || response.data.length === 0) return null;
-    return response?.data[0];
-}
+export const getUserProfileAsync = async (): Promise<any | null> => {
+  const response = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("user_id", supabaseUser?.id);
+  if (response?.data === null || response.data.length === 0) return null;
+  return response?.data[0];
+};
 
 supabase.auth.getUser().then((response) => {
   if (response.data.user === null) return;
@@ -26,26 +29,41 @@ supabase.auth.getUser().then((response) => {
 
 let channel: RealtimeChannel;
 
-export const login = async (email: string, password: string) : Promise<AuthError | null> => {
-    const response = await supabase.auth.signInWithPassword({ email: email, password: password });
-    if (response.error !== undefined && response.error !== null) return response.error;
-    supabaseUser = response.data.user;
-    return null;
-}
+export const login = async (
+  email: string,
+  password: string
+): Promise<AuthError | null> => {
+  const response = await supabase.auth.signInWithPassword({
+    email: email,
+    password: password,
+  });
+  if (response.error !== undefined && response.error !== null)
+    return response.error;
+  supabaseUser = response.data.user;
+  return null;
+};
 
-export const register = async (email: string, password: string, username: string) : Promise<AuthError | null> => {
-    const response = await supabase.auth.signUp({email: email, password: password});
-    if (response.error !== undefined && response.error !== null) return response.error;
-    supabaseUser = response.data.user;
+export const register = async (
+  email: string,
+  password: string,
+  username: string
+): Promise<AuthError | null> => {
+  const response = await supabase.auth.signUp({
+    email: email,
+    password: password,
+  });
+  if (response.error !== undefined && response.error !== null)
+    return response.error;
+  supabaseUser = response.data.user;
 
-    await supabase.from("profiles").insert({
-        user_name: username,
-        is_guest: false,
-        user_id: supabaseUser?.id,
-    });
+  await supabase.from("profiles").insert({
+    user_name: username,
+    is_guest: false,
+    user_id: supabaseUser?.id,
+  });
 
-    return null;
-}
+  return null;
+};
 
 export const guestLogin = async () => {
   let guestId = localStorage.getItem(GUESTID);
@@ -96,6 +114,40 @@ export const getMessages = async () => {
 
 export const sendChatRoomMessage = async (message: string) => {
   return await supabase.from("messages").insert({ message: message });
+};
+
+export const getDay = async () => {
+  const { data, error } = await supabase
+    .from("current_day")
+    .select("*")
+    .eq("id", 1);
+
+  if (data === null) return null;
+
+  return data[0] as { id: number; day: number };
+};
+
+export const daySubscription = (
+  dayChanged: (
+    x: RealtimePostgresChangesPayload<{
+      [key: string]: any;
+    }>
+  ) => void
+) => {
+  supabase
+    .channel("public:current_day")
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "current_day",
+      },
+      (payload) => {
+        dayChanged(payload);
+      }
+    )
+    .subscribe();
 };
 
 export const messageSubscribe = (

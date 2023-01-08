@@ -1,17 +1,28 @@
-import {Button, ButtonGroup, createTheme, CssBaseline, Dialog, Paper,} from "@mui/material";
+import { Button, createTheme, CssBaseline, Dialog, Paper } from "@mui/material";
 import Typography from "@mui/material/Typography";
-import {ThemeProvider} from "@mui/system";
-import {useEffect, useState} from "react";
+import { ThemeProvider } from "@mui/system";
+import { useEffect, useState } from "react";
 import "./App.css";
-import {Job} from "./classes/Job";
-import {Skill} from "./classes/Skill";
-import {familyBakery, purchaseableItems, rebirthHelper, selfImprovmentSkills,} from "./Data";
-import {formatDate, getCurrenyDivisions, prettyPrintCurrency} from "./Utils";
-import Icon from "@mui/material/Icon";
-import Chat from "./components/chat";
+import { Job } from "./classes/Job";
+import { Skill } from "./classes/Skill";
+import {
+  familyBakery,
+  purchaseableItems,
+  rebirthHelper,
+  selfImprovmentSkills,
+} from "./Data";
+import { formatDate, getCurrenyDivisions, prettyPrintCurrency } from "./Utils";
 import Login from "./components/login";
-import {getUserProfileAsync, supabase} from "./supabaseClient";
-import {User} from "@supabase/supabase-js";
+import {
+  daySubscription,
+  getDay,
+  getUserProfileAsync,
+  supabase,
+} from "./supabaseClient";
+import { User } from "@supabase/supabase-js";
+import { InfoBar } from "./components/infoBar";
+import DirectionSnackbar from "./components/directrionSnackbar";
+import { LoadingDialog } from "./components/loadingDialog";
 
 const theme = createTheme({
   palette: {
@@ -36,326 +47,357 @@ const theme = createTheme({
 });
 
 function App() {
-    const birthDate = [7, 4, 1042];
-    const startingAge = 16;
+  const saveDataKey = "_7fZ";
+  const birthDate = { day: 24, month: 10, year: 1024 };
+  const startingAge = 16;
 
-    const [lifeExpectency, setLifeExpectancy] = useState(20);
-    const [health, setHealth] = useState(100);
+  const [saveSnackOpen, setSaveSnackOpen] = useState<boolean>(false);
 
-    const normalTime = 150;
-    const fastTime = 50;
-    const faster = 10;
+  const [lifeExpectency, setLifeExpectancy] = useState(20);
+  const [health, setHealth] = useState(100);
 
-    const [loopTime, setLoopTime] = useState(normalTime);
+  const normalTime = 150;
+  const fastTime = 50;
+  const faster = 10;
 
-    const [date, setDate] = useState(birthDate[0]);
-    const [month, setMonth] = useState(birthDate[1]);
-    const [year, setYear] = useState(birthDate[2] + startingAge);
+  const [loopTime, setLoopTime] = useState(normalTime);
 
-    const [age, setAge] = useState(startingAge);
+  const [date, setDate] = useState(birthDate.day);
+  const [month, setMonth] = useState(birthDate.month);
+  const [year, setYear] = useState(birthDate.year + startingAge);
 
-    const [activeJob, setActiveJob] = useState<Job | null>();
-    const [activeSkill, setActiveSkill] = useState<Skill | null>();
-    const [cash, setCash] = useState(0);
-    const [outgoings, setOutgoings] = useState(0);
+  const [age, setAge] = useState(startingAge);
 
-    const [paused, setPaused] = useState(true);
-    const [isDead, setIsDead] = useState(false);
+  const [activeJob, setActiveJob] = useState<Job | null>();
+  const [activeSkill, setActiveSkill] = useState<Skill | null>();
+  const [cash, setCash] = useState(0);
+  const [outgoings, setOutgoings] = useState(0);
 
-    const [loggedIn, setLoggedIn] = useState(false);
-    const [user, setUser] = useState<User>();
-    const [userProfile, setUserProfile] = useState<any>();
+  const [paused, setPaused] = useState(true);
+  const [isDead, setIsDead] = useState(false);
 
-    const withdrawCash = (amount: number): boolean => {
-        if (amount > cash) return false;
-        setCash((c) => c - amount);
-        return true;
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [user, setUser] = useState<User>();
+  const [userProfile, setUserProfile] = useState<any>();
+
+  const [loadingPage, setLoadingPage] = useState<boolean>(true);
+  const [displayMain, setDisplayMain] = useState<boolean>(false);
+
+  const withdrawCash = (amount: number): boolean => {
+    if (amount > cash) return false;
+    setCash((c) => c - amount);
+    return true;
+  };
+
+  const depositCash = (amount: number) => {
+    setCash((c) => c + amount);
+  };
+
+  const die = () => {
+    setIsDead(true);
+    setPaused(true);
+    setActiveJob(null);
+    setActiveSkill(null);
+  };
+
+  const rebirth = () => {
+    setIsDead(false);
+
+    setDate(birthDate.day);
+    setMonth(birthDate.month);
+    setYear(birthDate.year + startingAge);
+
+    setCash(0);
+    setHealth(100);
+
+    setAge(startingAge);
+
+    rebirthHelper();
+  };
+
+  const iterate = () => {
+    if (paused) return;
+
+    // DO THINGS
+    if (activeJob !== null && activeJob !== undefined) {
+      activeJob.increaseProgress();
+      depositCash(activeJob.getIncome() - outgoings);
+      setActiveJob(activeJob);
+    }
+    if (activeSkill !== null && activeSkill !== undefined) {
+      activeSkill.increaseProgress();
+      setActiveSkill(activeSkill);
+    }
+  };
+
+  const userLoggedIn = () => {
+    supabase.auth.getUser().then((userResponse) => {
+      if (userResponse.data.user !== null) {
+        setLoggedIn(true);
+        setUser(userResponse.data.user);
+        getUserProfileAsync().then((data) => setUserProfile(data));
+      }
+    });
+  };
+
+  useEffect(() => {
+    supabase.auth.getUser().then((userResponse) => {
+      if (userResponse.data.user !== null) {
+        setLoggedIn(true);
+        setUser(userResponse.data.user);
+        getUserProfileAsync().then((data) => setUserProfile(data));
+      }
+    });
+  }, []);
+
+  const username = () =>
+    userProfile === null || userProfile === undefined
+      ? ""
+      : userProfile.is_guest
+      ? user?.email?.replace("@looplife", "")
+      : `${userProfile.user_name} (${userProfile.id})`;
+
+  const save = () => {
+    setSaveSnackOpen(true);
+    const data = {
+      age,
+      activeJob,
+      activeSkill,
+      cash,
+      outgoings,
+      lifeExpectency,
+      health,
     };
+    localStorage.setItem(saveDataKey, window.btoa(JSON.stringify(data)));
+  };
 
-    const depositCash = (amount: number) => {
-        setCash((c) => c + amount);
-    };
+  useEffect(() => {}, [loggedIn, userProfile, user]);
 
-    const die = () => {
-        setIsDead(true);
-        setPaused(true);
-        setActiveJob(null);
-        setActiveSkill(null);
-    };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      iterate();
+    }, loopTime);
 
-    const rebirth = () => {
-        setIsDead(false);
+    const saveInterval = setInterval(() => {
+      save();
+      console.log("hit");
+    }, 30 * 1000);
 
-        setDate(birthDate[0]);
-        setMonth(birthDate[1]);
-        setYear(birthDate[2] + startingAge);
+    getDay().then((obj) => {
+      if (obj === null) {
+        console.error("Cound not get current day");
+        return;
+      }
 
-        setCash(0);
-        setHealth(100);
-
-        setAge(startingAge);
-
-        rebirthHelper();
-    };
-
-    const iterate = () => {
-        if (paused) return;
-        const tempDate = new Date(year, month, date + 1);
-        setDate(tempDate.getDate());
-        setMonth(tempDate.getMonth());
-        setYear(tempDate.getFullYear());
-        if (
-                date === birthDate[0] &&
-      month === birthDate[1] &&
-      year > birthDate[2]
+      const tempDate = new Date(year, month, date + obj.day);
+      setDate(tempDate.getDate());
+      setMonth(tempDate.getMonth());
+      setYear(tempDate.getFullYear());
+      if (
+        date === birthDate.day &&
+        month === birthDate.month &&
+        year > birthDate.year
       ) {
-            setAge(year - birthDate[2]);
-        }
+        setAge(year - birthDate.year);
+      }
 
-        if (age >= lifeExpectency - 2) {
-            if (Math.random() > health / 50) die();
-            else if (Math.random() > 0.9) setHealth(health - 1);
-        }
+      if (age >= lifeExpectency - 2) {
+        if (Math.random() > health / 50) die();
+        else if (Math.random() > 0.9) setHealth(health - 1);
+      }
+    });
 
-        // DO THINGS
-        if (activeJob !== null && activeJob !== undefined) {
-            activeJob.increaseProgress();
-            depositCash(activeJob.getIncome() - outgoings);
-            setActiveJob(activeJob);
-        }
-        if (activeSkill !== null && activeSkill !== undefined) {
-            activeSkill.increaseProgress();
-            setActiveSkill(activeSkill);
-        }
+    daySubscription((x) => {
+      if (x.new === null) return;
+      const daysToAdd = x.new as { day: number; id: number };
+
+      const tempDate = new Date(year, month, date + daysToAdd.day);
+      setDate(tempDate.getDate());
+      setMonth(tempDate.getMonth());
+      setYear(tempDate.getFullYear());
+      if (
+        date === birthDate.day &&
+        month === birthDate.month &&
+        year > birthDate.year
+      ) {
+        setAge(year - birthDate.year);
+      }
+
+      if (age >= lifeExpectency - 2) {
+        if (Math.random() > health / 50) die();
+        else if (Math.random() > 0.9) setHealth(health - 1);
+      }
+    });
+
+    setTimeout(() => {
+      setLoadingPage(false);
+      setTimeout(() => {
+        setDisplayMain(true);
+      }, 500);
+    }, 1500);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(saveInterval);
+      console.log("Cleanup");
     };
+  }, []);
 
-    const pause = () => {
-        setPaused(true);
-    };
+  return (
+    <>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <LoadingDialog hidden={!loadingPage} />
 
-    const play = () => {
-        setLoopTime(normalTime);
-        setPaused(false);
-    };
-
-    const fastForward = () => {
-        setLoopTime(fastTime);
-        setPaused(false);
-    };
-
-    const fasterForwarder = () => {
-        setLoopTime(faster);
-        setPaused(false);
-    };
-
-    useEffect(() => {
-        supabase.auth.getUser().then((userResponse) => {
-            if (userResponse.data.user !== null) {
-                setLoggedIn(true);
-                setUser(userResponse.data.user);
-                getUserProfileAsync().then(data => setUserProfile(data));
-            }
-        });
-        }, []);
-
-    useEffect(() => {}, [loggedIn]);
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            iterate();
-            }, loopTime);
-
-        return () => clearInterval(interval);
-    })
-
-    return (
+        <div
+          style={{
+            display: displayMain ? "block" : "hidden",
+            opacity: displayMain ? "100%" : "0%",
+            transition: "opacity 2s linear",
+          }}
+        >
+          {!loggedIn ? (
+            <Login
+              loggedIn={() => {
+                userLoggedIn();
+              }}
+            />
+          ) : (
             <>
-            <ThemeProvider theme={theme}>
-                <CssBaseline />
-                {!loggedIn ? (
-                        <Login
-                            loggedIn={() => {
-                            setLoggedIn(true);
+              <Dialog open={isDead}>
+                <div
+                  style={{
+                    padding: "8px",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <Typography>Oops, looks like you died...</Typography>
+                  <Typography>
+                    That's what happenes when you're mortal.
+                  </Typography>
+                  <Button
+                    sx={{ mx: "auto", mt: 2, mb: 1 }}
+                    variant={"contained"}
+                    size={"small"}
+                    onClick={rebirth}
+                  >
+                    Continue
+                  </Button>
+                </div>
+              </Dialog>
+              {/*<Chat />*/}
+              <InfoBar
+                name={username()}
+                date={formatDate(new Date(year, month, date))}
+              />
+              <div style={{ display: "flex" }}>
+                <div style={{ width: "300px" }}>
+                  <Paper
+                    sx={{
+                      margin: "16px",
+                      p: 2,
+                      height: "calc(100vh - calc(16px * 2) - 64px)",
+                      minHeight: "400px",
+                      position: "relative",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <div>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "row",
+                          justifyContent: "space-between",
                         }}
-                        />
-                        ) : (
-                                <>
-                                <Dialog open={isDead}>
-                                    <div
-                                        style={{
-                                        padding: "8px",
-                                            display: "flex",
-                                            flexDirection: "column",
-                                        }}
-                                        >
-                                        <Typography>Oops, looks like you died...</Typography>
-                                        <Typography>
-                                            That's what happenes when you're mortal.
-                                        </Typography>
-                                        <Button
-                                            sx={{ mx: "auto", mt: 2, mb: 1 }}
-                                            variant={"contained"}
-                                            size={"small"}
-                                            onClick={rebirth}
-                                            >
-                                            Continue
-                                        </Button>
-                                    </div>
-                                </Dialog>
-                                {/*<Chat />*/}
-                                <div style={{ display: "flex" }}>
-                                    <div style={{ width: "300px" }}>
-                                        <Paper
-                                            sx={{
-                                            margin: "16px",
-                                                p: 2,
-                                                height: "calc(100vh - calc(16px * 2))",
-                                                minHeight: "400px",
-                                                position: "relative",
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                justifyContent: "space-between",
-                                            }}
-                                            >
-                                            <div>
-                                                <div
-                                                    style={{
-                                                    display: "flex",
-                                                        flexDirection: "row",
-                                                        justifyContent: "space-between",
-                                                    }}
-                                                    >
-                                                    <Typography>Date:</Typography>
-                                                    <Typography>
-                                                        {formatDate(new Date(year, month, date))}
-                                                    </Typography>
-                                                </div>
-                                                <div
-                                                    style={{
-                                                    display: "flex",
-                                                        flexDirection: "row",
-                                                        justifyContent: "space-between",
-                                                    }}
-                                                    >
-                                                    <Typography>Age:</Typography>
-                                                    <Typography>{age}</Typography>
-                                                </div>
-                                                <div
-                                                    style={{
-                                                    display: "flex",
-                                                        flexDirection: "row",
-                                                        justifyContent: "space-between",
-                                                    }}
-                                                    >
-                                                    <Typography>Money:</Typography>
-                                                    <Typography>
-                                                        {prettyPrintCurrency(getCurrenyDivisions(cash))}
-                                                    </Typography>
-                                                </div>
-                                                <div
-                                                    style={{
-                                                    display: "flex",
-                                                        flexDirection: "row",
-                                                        justifyContent: "space-between",
-                                                    }}
-                                                    >
-                                                    <Typography>Health:</Typography>
-                                                    <Typography>{health}</Typography>
-                                                </div>
-                                                <div style={{ display: "flex", marginTop: "8px" }}>
-                                                    <ButtonGroup sx={{ ml: "auto" }}>
-                                                        <Button
-                                                            size={"small"}
-                                                            variant={"contained"}
-                                                            disabled={paused}
-                                                            onClick={() => pause()}
-                                                            >
-                                                            <Icon>pause</Icon>
-                                                        </Button>
-                                                        <Button
-                                                            size={"small"}
-                                                            variant={"contained"}
-                                                            disabled={!paused && loopTime === normalTime}
-                                                            onClick={() => play()}
-                                                            >
-                                                            <Icon>play_arrow</Icon>
-                                                        </Button>
-                                                        <Button
-                                                            size={"small"}
-                                                            variant={"contained"}
-                                                            disabled={!paused && loopTime === fastTime}
-                                                            onClick={() => fastForward()}
-                                                            >
-                                                            <Icon>fast_forward</Icon>
-                                                        </Button>
-                                                        <Button
-                                                            size={"small"}
-                                                            variant={"contained"}
-                                                            disabled={!paused && loopTime === faster}
-                                                            onClick={() => fasterForwarder()}
-                                                            >
-                                                            <Icon>fast_forward</Icon>
-                                                        </Button>
-                                                    </ButtonGroup>
-                                                </div>
-                                            </div>
-                                            <div
-                                                style={{ display: "flex", justifyContent: "space-between" }}
-                                                >
-                                                <Typography fontSize={12}>Logged in as:</Typography>
-                                                <Typography fontSize={12}>
-                                                    { userProfile === null || userProfile === undefined ? "" : userProfile.is_guest ? user?.email?.replace("@looplife", "") : `${userProfile.user_name} (${userProfile.id})` }
-                                                </Typography>
-                                            </div>
-                                        </Paper>
-                                    </div>
+                      >
+                        <Typography>Age:</Typography>
+                        <Typography>{age}</Typography>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Typography>Money:</Typography>
+                        <Typography>
+                          {prettyPrintCurrency(getCurrenyDivisions(cash))}
+                        </Typography>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Typography>Health:</Typography>
+                        <Typography>{health}</Typography>
+                      </div>
+                    </div>
+                  </Paper>
+                </div>
 
-                                    <div>
-                                        <div
-                                            style={{
-                                            width: "200px",
-                                                display: "flex",
-                                                flexDirection: "column",
-                                            }}
-                                            ></div>
-                                        <div style={{ marginTop: "16px" }}>Skills</div>
-                                        <div style={{ display: "flex", flexDirection: "row" }}>
-                                            {selfImprovmentSkills.map((skill) => (
-                                                    <skill.component
-                                                        key={skill.id}
-                                                        setAsActive={(skill: Skill) => setActiveSkill(skill)}
-                                                    />
-                                                    ))}
-                                        </div>
-                                        <div>Bakery</div>
-                                        <div style={{ display: "flex", flexDirection: "row" }}>
-                                            {familyBakery
-                    .filter((j) => j.unlocked())
-                    .map((job) => (
-                            <job.component
-                                key={job.id}
-                                setAsActive={(job: Job) => setActiveJob(job)}
-                            />
-                            ))}
-                                        </div>
-                                        <div>Items</div>
-                                        <div style={{ display: "flex", flexDirection: "row" }}>
-                                            {purchaseableItems
-                    .filter((j) => true)
-                    .map((purchasable) => (
-                            <purchasable.component
-                                key={purchasable.id}
-                                withdraw={withdrawCash}
-                            />
-                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                                </>
-                                )}
-            </ThemeProvider>
+                <div>
+                  <div
+                    style={{
+                      width: "200px",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  ></div>
+                  <div style={{ marginTop: "16px" }}>Skills</div>
+                  <div style={{ display: "flex", flexDirection: "row" }}>
+                    {selfImprovmentSkills.map((skill) => (
+                      <skill.component
+                        key={skill.id}
+                        setAsActive={(skill: Skill) => setActiveSkill(skill)}
+                      />
+                    ))}
+                  </div>
+                  <div>Bakery</div>
+                  <div style={{ display: "flex", flexDirection: "row" }}>
+                    {familyBakery
+                      .filter((j) => j.unlocked())
+                      .map((job) => (
+                        <job.component
+                          key={job.id}
+                          setAsActive={(job: Job) => setActiveJob(job)}
+                        />
+                      ))}
+                  </div>
+                  <div>Items</div>
+                  <div style={{ display: "flex", flexDirection: "row" }}>
+                    {purchaseableItems
+                      .filter((j) => true)
+                      .map((purchasable) => (
+                        <purchasable.component
+                          key={purchasable.id}
+                          withdraw={withdrawCash}
+                        />
+                      ))}
+                  </div>
+                </div>
+              </div>
             </>
-            );
+          )}
+        </div>
+
+        <DirectionSnackbar
+          open={saveSnackOpen}
+          close={() => setSaveSnackOpen(false)}
+          duration={1500}
+          up={true}
+          origin={{ vertical: "bottom", horizontal: "right" }}
+          message={"Saved the game 😉"}
+        />
+      </ThemeProvider>
+    </>
+  );
 }
 
 export default App;
